@@ -1,0 +1,155 @@
+<!doctype html>
+<HTML lang="en">
+	<HEAD>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=yes">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		<title>Meet Assist</title>
+		<style>
+			/* Style for chat-bubble */
+			.chat-bubble {
+			  background-color: #f1f0f0;
+			  border-radius: 10px;
+			  padding: 10px;
+			  margin-bottom: 10px;
+			  position: relative;
+			  max-width: 100%;
+			}
+			.chat-container {
+				height: 450px;
+				overflow-y: auto;
+			}
+		</style>
+	</HEAD>
+	<BODY>
+	<h1 align='center'>Video Summarizer</h1>
+	<div class="container">
+		<div class="row">
+		<div class="col-md-6 mt-3 border p-2">
+			<h4>Upload Video Recording</h4></br>
+			<div class="form-group">
+				<table><tr>
+				<td><input type="file" class="form-control-file" name="recording" id="recording"></td>
+				<td><button type="button" class="btn btn-primary" onclick="transcribeFile()">Upload</button></td>
+				</tr></table>
+			</div>
+			<!-- Loading Modal -->
+			<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
+				<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+					<h5 class="modal-title" id="loadingModalLabel">Uploading File...</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					</div>
+					<div class="modal-body">
+					<div class="d-flex justify-content-center">
+						<div class="ml-3">
+						<p id="loadingMessage">Please wait while the file is being uploaded.</p>
+						<p>Time elapsed: <span id="timer">0</span> seconds</p>
+						</div>
+					</div>
+					</div>
+				</div>
+				</div>
+			</div>
+			<h4>Meeting Summary<h4>
+			<textarea class="form-control" id="meet_summary" rows="15" disabled=True></textarea>
+		</div>
+		<!-- Chatbot UI -->
+		<div class="col-md-6 mt-3 border p-2">
+		  <h4 class="mb-3">Chatbot</h4>
+		  <div class="chat-container">
+			<!-- Chatbot messages go here -->
+		  </div>
+		  <form id="chat-form">
+			<div class="input-group">
+			  <input type="text" class="form-control" id="chat-input" placeholder="Type your message...">
+			  <button type="submit" class="btn btn-primary">Send</button>
+			</div>
+		  </form>
+		</div>
+		</div>
+	</div>
+	<!-- jQuery -->
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+	<!-- Bootstrap JS -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+	<script>
+		function transcribeFile() {
+			var fileInput = document.getElementById('recording');
+			if (fileInput.files.length <= 0) {
+				alert('Select a file before uploading.');
+				return;
+			}
+
+  			var file = fileInput.files[0];
+
+			var fileExtension = file.name.split('.').pop().toLowerCase();
+			if (fileExtension !== 'mp4') {
+				alert('Invalid file format!!\nOnly .mp4 files are allowed.');
+				return;
+			}
+
+			var formData = new FormData();
+			formData.append('file', file, file.name);
+			
+			$('#loadingModal').modal('show');
+			// Start the timer when the modal is shown
+			$('#loadingModal').on('shown.bs.modal', function () {
+				var startTime = new Date();
+				var timer = setInterval(function() {
+					var elapsedSeconds = Math.floor((new Date() - startTime) / 1000);
+					$('#timer').text(elapsedSeconds);
+				}, 1000);
+
+				// Stop the timer and hide the modal when the AJAX request is complete
+				$.ajax({
+					url: '/transcribe',
+					type: 'POST',
+					data: formData,
+					contentType: false,
+					processData: false,
+					success: function(data) {
+						clearInterval(timer);
+						$('#loadingModal').modal('hide');
+						var summary = data.summary;
+						$('#meet_summary').val(summary);
+						alert('File uploaded successfully.');
+						},
+					error: function() {
+						$('#loadingModal').modal('hide');
+						alert('Error uploading file');
+					}
+				});
+			});
+			/*$.ajax({
+				url: '/transcribe',
+				type: 'POST',
+				data: formData,
+				processData: false,
+				contentType: false,
+				success: function(data) {
+					clearInterval(timer);
+					$('#loadingModal').modal('hide');
+					var summary = data.summary;
+      				$('#meet_summary').val(summary);
+					alert('File uploaded successfully.');
+				},
+				error: function() {
+					alert('Error uploading file');
+				},
+				complete: function() {
+				// Hide loading modal
+				$('#loadingModal').modal('hide');
+				}
+			});*/
+		}
+	</script>
+	</BODY>
+</HTML>

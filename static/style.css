@@ -1,0 +1,20 @@
+.container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.chatbox {
+  height: 400px;
+  overflow-y: scroll;
+}
+
+#user-input {
+  width: 80%;
+  padding: 10px;
+  margin-right: 10px;
+}
+
+button {
+  padding: 10px;
+}
