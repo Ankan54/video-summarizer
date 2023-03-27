@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify, render_template
 from audio_transcription import summarise_recording
+from dotenv import load_dotenv
+load_dotenv()
+
 app = Flask(__name__)
 
 recording_summary= ""

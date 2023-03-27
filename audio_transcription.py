@@ -1,6 +1,6 @@
 # Note: you need to be using OpenAI Python v0.27.0 for the code below to work
-import openai
-openai.api_key = ""
+import openai,os
+openai.api_key = os.getenv('OPENAI_KEY')
 
 def transcribe_audio():
     audio_file= open(r".\media\temp_audio.mp4", "rb")
