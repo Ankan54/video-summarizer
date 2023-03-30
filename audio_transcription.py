@@ -11,14 +11,25 @@ def transcribe_audio():
 def summarise_recording():
     text= transcribe_audio()
     with open(r".\media\temp_transcript.txt","w") as txt_file:
-        txt_file.write(text) 
+        txt_file.write(text)
+    print("transcribe done")
     prompt= f"Summarize the following text in a numerical point wise manner:\n{text}"
     completion = openai.Completion.create(model="text-davinci-003",
                                         prompt=prompt,
                                         temperature=0.7,
-                                        max_tokens= 500,
-                                        top_p= 1.0,
+                                        max_tokens= 1000,
+                                        top_p= 1,
                                         frequency_penalty= 0.0,
-                                        presence_penalty=1)
+                                        presence_penalty=0)
 
     return completion.choices[0].text.strip("\n")
+
+
+def bot_response(chat_history):
+    completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
+                                            messages= chat_history,
+                                            temperature=0.5,
+                                            max_tokens=100)
+
+    return completion['choices'][0]['message']['content'].strip("\n")
+

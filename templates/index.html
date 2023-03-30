@@ -16,10 +16,44 @@
 			  position: relative;
 			  max-width: 100%;
 			}
+			.chat-user{
+				text-align: right;
+			}
 			.chat-container {
 				height: 450px;
 				overflow-y: auto;
 			}
+			
+			.response {
+				display: inline-block;
+				overflow: hidden;
+				white-space: normal;
+				/*width: 0;
+				animation: typing-response 2s steps(30, end) forwards;*/
+			}
+
+			.typed {
+				overflow: hidden;
+				white-space: nowrap;
+				border-right: 2px solid;
+				width: 0;
+				animation: typing-typed 1s steps(30, end) forwards, blinking 1s infinite;
+			}
+			@keyframes typing-typed {
+				from { width: 0 }
+				to { width: 16% }
+			}
+
+			@keyframes typing-response {
+				from { width: 0 }
+				to { width: 100% }
+			}
+			@keyframes blinking {
+				0% {border-right-color: transparent}
+				50% {border-right-color: black}
+				100% {border-right-color: transparent}
+			}
+
 		</style>
 	</HEAD>
 	<BODY>
@@ -55,21 +89,19 @@
 				</div>
 				</div>
 			</div>
-			<h4>Meeting Summary<h4>
+			<h4>Video Summary<h4>
 			<textarea class="form-control" id="meet_summary" rows="15" disabled=True></textarea>
 		</div>
 		<!-- Chatbot UI -->
 		<div class="col-md-6 mt-3 border p-2">
 		  <h4 class="mb-3">Chatbot</h4>
-		  <div class="chat-container">
+		  <div class="chat-container" id="chat-container">
 			<!-- Chatbot messages go here -->
 		  </div>
-		  <form id="chat-form">
 			<div class="input-group">
 			  <input type="text" class="form-control" id="chat-input" placeholder="Type your message...">
-			  <button type="submit" class="btn btn-primary">Send</button>
+			  <button type="button" class="btn btn-primary" onclick="userChat()" id="chat-send" disabled=true>Send</button>
 			</div>
-		  </form>
 		</div>
 		</div>
 	</div>
@@ -120,6 +152,7 @@
 						$('#loadingModal').modal('hide');
 						var summary = data.summary;
 						$('#meet_summary').val(summary);
+						botChat("Hi, I am your virtual assistant. You can ask me any question about this meeting.", true);
 						alert('File uploaded successfully.');
 						},
 					error: function() {
@@ -149,7 +182,88 @@
 				$('#loadingModal').modal('hide');
 				}
 			});*/
-		}
+		};
+
+		function userChat(){
+			const inputText = document.getElementById("chat-input").value.trim();
+			if (inputText == ''){
+				return;
+			};
+			console.log(inputText);
+			var chatContainer = document.getElementById("chat-container");
+			// Create a new chat bubble
+			var newChatBubble = document.createElement("div");
+			newChatBubble.className = "chat-bubble chat-user";
+			// Create the chat bubble content
+			var chatBubbleHeader = document.createElement("p");
+			chatBubbleHeader.innerText = "User";
+			chatBubbleHeader.style.fontWeight = "bold";
+			var chatBubbleContent = document.createElement("p");
+			chatBubbleContent.innerText = inputText;
+			// Append the chat bubble content to the chat bubble
+			newChatBubble.appendChild(chatBubbleHeader);
+			newChatBubble.appendChild(chatBubbleContent);
+			// Append the new chat bubble to the chat messages container
+			chatContainer.appendChild(newChatBubble);
+			$('#chat-input').val("");
+			//
+			var chatBubbleTypingContent = document.createElement("p");
+			chatBubbleTypingContent.className = "typed";
+			chatBubbleTypingContent.innerText = "Processing.....";
+			chatBubbleTypingContent.style.fontSize = "15px";
+			
+			chatContainer.appendChild(chatBubbleTypingContent);
+			chatContainer.scrollTop = chatContainer.scrollHeight;
+			document.getElementById("chat-send").disabled=true;
+			sendToBot(inputText);
+			return;
+		};
+		
+		function sendToBot(inputText){
+			$.ajax({
+				url: "/chatbot",
+				type: "POST",
+				contentType: "application/json",
+				data: JSON.stringify({"input_text": inputText}),
+				success: function(response) {
+					// Handle the response from the Flask endpoint
+					let botResponse = response["response"];
+					// Update the chat UI with the bot's response
+					botChat(botResponse);
+					document.getElementById("chat-container").scrollTop = document.getElementById("chat-container").scrollHeight;
+				},
+				error: function() {
+					alert('Some Error Occurred. Try again');
+					document.getElementById("chat-send").disabled=false;
+				}
+			});
+		};
+
+		function botChat(botResponse,first=false){
+			//remove the loading screen
+			if (first == false){
+				let typedElements = document.getElementsByClassName("typed");
+				let lastTypedElement = Array.from(typedElements).pop();
+				lastTypedElement.remove();
+			};
+			//
+			var chatContainer = document.getElementById("chat-container");
+			var newChatBubble = document.createElement("div");
+			newChatBubble.className = "chat-bubble chat-bot";
+			var chatBubbleHeader = document.createElement("p");
+			chatBubbleHeader.innerText = "Bot";
+			chatBubbleHeader.style.fontWeight = "bold";
+			var chatBubbleContent = document.createElement("p");
+			chatBubbleContent.className = "response";
+			chatBubbleContent.innerText = botResponse;
+			// Append the chat bubble content to the chat bubble
+			newChatBubble.appendChild(chatBubbleHeader);
+			newChatBubble.appendChild(chatBubbleContent);
+			// Append the new chat bubble to the chat messages container
+			chatContainer.appendChild(newChatBubble);
+			document.getElementById("chat-send").disabled=false;
+			return;
+		};
 	</script>
 	</BODY>
 </HTML>
