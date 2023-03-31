@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=yes">
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 		<title>Meet Assist</title>
 		<style>
 			/* Style for chat-bubble */
@@ -22,6 +22,9 @@
 			.chat-container {
 				height: 450px;
 				overflow-y: auto;
+			}
+			#dwld-transcript{
+				margin-left: 25px;
 			}
 			
 			.response {
@@ -65,7 +68,8 @@
 			<div class="form-group">
 				<table><tr>
 				<td><input type="file" class="form-control-file" name="recording" id="recording"></td>
-				<td><button type="button" class="btn btn-primary" onclick="transcribeFile()">Upload</button></td>
+				<td><button type="button" class="btn btn-primary" onclick="transcribeFile()"><i class="fas fa-upload"></i>&nbsp;Upload</button></td>
+				<td><button type="button" class="btn btn-info" id="dwld-transcript" onclick="dwldTranscript()" disabled=true><i class="fas fa-download"></i>&nbsp;Transcript</button></td>
 				</tr></table>
 			</div>
 			<!-- Loading Modal -->
@@ -94,13 +98,16 @@
 		</div>
 		<!-- Chatbot UI -->
 		<div class="col-md-6 mt-3 border p-2">
-		  <h4 class="mb-3">Chatbot</h4>
+			<div class="d-flex justify-content-between align-items-center mb-3">
+				<h4>Chatbot</h4>
+				<button class="btn btn-secondary btn-sm" id="reset-chat" onclick="resetChat()" disabled=true><i class="fas fa-sync"></i>&nbsp;Reset</button>
+			</div>
 		  <div class="chat-container" id="chat-container">
 			<!-- Chatbot messages go here -->
 		  </div>
 			<div class="input-group">
 			  <input type="text" class="form-control" id="chat-input" placeholder="Type your message...">
-			  <button type="button" class="btn btn-primary" onclick="userChat()" id="chat-send" disabled=true>Send</button>
+			  <button type="button" class="btn btn-primary" onclick="userChat()" id="chat-send" disabled=true><i class="fas fa-paper-plane"></i>&nbsp;Send</button>
 			</div>
 		</div>
 		</div>
@@ -152,7 +159,9 @@
 						$('#loadingModal').modal('hide');
 						var summary = data.summary;
 						$('#meet_summary').val(summary);
-						botChat("Hi, I am your virtual assistant. You can ask me any question about this meeting.", true);
+						botChat("Hi, I am your virtual assistant. You can ask me any question about this video.", true);
+						document.getElementById("reset-chat").disabled=false;
+						document.getElementById("dwld-transcript").disabled=false;
 						alert('File uploaded successfully.');
 						},
 					error: function() {
@@ -196,7 +205,7 @@
 			newChatBubble.className = "chat-bubble chat-user";
 			// Create the chat bubble content
 			var chatBubbleHeader = document.createElement("p");
-			chatBubbleHeader.innerText = "User";
+			chatBubbleHeader.innerHTML = '<i class="fas fa-user"></i>&nbsp; User';
 			chatBubbleHeader.style.fontWeight = "bold";
 			var chatBubbleContent = document.createElement("p");
 			chatBubbleContent.innerText = inputText;
@@ -251,7 +260,7 @@
 			var newChatBubble = document.createElement("div");
 			newChatBubble.className = "chat-bubble chat-bot";
 			var chatBubbleHeader = document.createElement("p");
-			chatBubbleHeader.innerText = "Bot";
+			chatBubbleHeader.innerHTML = '<i class="fas fa-robot"></i>&nbsp; Bot';
 			chatBubbleHeader.style.fontWeight = "bold";
 			var chatBubbleContent = document.createElement("p");
 			chatBubbleContent.className = "response";
@@ -263,6 +272,59 @@
 			chatContainer.appendChild(newChatBubble);
 			document.getElementById("chat-send").disabled=false;
 			return;
+		};
+
+		function dwldTranscript(){
+			$.ajax({
+				url: "/download",
+				type: "GET",
+				success: function(response) {
+					// Handle the response from the Flask endpoint
+					var blob = new Blob([response], {type: "text/plain"});
+
+					// Create a temporary URL from the Blob object
+					var url = URL.createObjectURL(blob);
+
+					// Create a temporary anchor element
+					var link = document.createElement("a");
+					link.href = url;
+
+					// Set the download attribute to the file name
+					link.download = "transcript.txt";
+
+					// Trigger a click event on the anchor element
+					link.click();
+
+					// Clean up
+					URL.revokeObjectURL(url);
+					return;
+				},
+				error: function() {
+					alert('Some Error Occurred. Try again');
+					return;
+				}
+			});
+		};
+
+		function resetChat(){
+			$.ajax({
+				url: "/reset",
+				type: "GET",
+				success: function(response) {
+					// Handle the response from the Flask endpoint
+					const parentDiv = document.getElementById("chat-container");
+					while (parentDiv.firstChild) {
+					parentDiv.removeChild(parentDiv.firstChild);
+					};
+					botChat("Hi, I am your virtual assistant. You can ask me any question about this video.", true);
+					document.getElementById("chat-container").scrollTop = document.getElementById("chat-container").scrollHeight;
+					return;
+				},
+				error: function() {
+					alert('Some Error Occurred. Try again');
+					return;
+				}
+			});
 		};
 	</script>
 	</BODY>
